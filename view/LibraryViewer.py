@@ -14,7 +14,8 @@ class LibraryUI(tk.Frame):
         # Initialize Library
         self.library = Library()
         self.listOfTrack = self.library.get_tracks()
-        self.current_track = self.listOfTrack[0]
+        if self.listOfTrack is not None:
+            self.current_track = self.listOfTrack[0]
         self.track_info_frame = None  # Frame to display selected track's info
 
         self.create_ui()

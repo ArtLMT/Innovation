@@ -35,7 +35,6 @@ class PlaylistManagement:
         Utils.save_playlists_to_csv(self.playlists)
         return True
 
-
     def delete_playlist(self, name):
         # Remove playlist from memory
         self.playlists = [p for p in self.playlists if p.get_name() != name]
