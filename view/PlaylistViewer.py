@@ -277,4 +277,4 @@ class PlaylistUI(tk.Frame):
         for track in tracks:
             if track.youtube_link:
                 webbrowser.open(track.youtube_link)
-                time.sleep(2)  # Wait 5 seconds before opening the next track
+                time.sleep(15)  # Wait 15 seconds before opening the next track
