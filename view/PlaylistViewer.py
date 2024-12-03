@@ -199,27 +199,28 @@ class PlaylistUI(tk.Frame):
             name_label.pack(pady=10)
 
     def on_remove_track_click(self):
-        if self.current_playlist:
-            if self.current_track:  # Remove a track
-                success = self.playlist_controller.remove_track_from_playlist(
-                    self.current_playlist.get_name(), self.current_track.get_name()
+        if not self.current_playlist:
+            messagebox.showwarning("Warning", "No playlist selected to remove.")
+            return
+
+        if self.current_track:  # Remove a track from the playlist
+            success = self.playlist_controller.remove_track_from_playlist(
+                self.current_playlist.get_name(), self.current_track.get_name()
+            )
+            if success:
+                messagebox.showinfo(
+                    "Success", f"Track '{self.current_track.get_name()}' removed from playlist."
                 )
-                if success:
-                    messagebox.showinfo(
-                        "Success", f"Track '{self.current_track.get_name()}' removed from playlist."
-                    )
-                    self.current_track = None
-                    self.reload_playlist_and_tracks_display()
-                else:
-                    messagebox.showerror("Error", "Failed to remove track.")
-            else:  # Remove a playlist
-                current_playlist_name = self.current_playlist.get_name()
-                self.playlist_controller.delete_playlist(current_playlist_name)
-                messagebox.showinfo("Success", f"Playlist '{current_playlist_name}' has been deleted.")
-                self.current_playlist = None
-                self.reload_playlist_view()
-        else:
-            messagebox.showwarning("Warning", "No playlist selected.")
+                self.current_track = None  # Reset current track selection
+                self.reload_playlist_and_tracks_display()
+            else:
+                messagebox.showerror("Error", "Failed to remove track.")
+        else:  # Remove the entire playlist
+            current_playlist_name = self.current_playlist.get_name()
+            self.playlist_controller.delete_playlist(current_playlist_name)
+            messagebox.showinfo("Success", f"Playlist '{current_playlist_name}' has been deleted.")
+            self.current_playlist = None  # Reset current playlist selection
+            self.reload_playlist_view()
 
     def reload_playlist_and_tracks_display(self):
         # Set the updated playlists
@@ -262,25 +263,24 @@ class PlaylistUI(tk.Frame):
     def select_track(self, track):
         self.current_track = track
         self.on_item_click(track)
-        
+
     def play_all_tracks(self):
-        #self.playlists = Utils.load_playlists_from_csv()
-        playlist_name = self.current_playlist.get_name()
-        playlist = self.playlist_controller.get_playlist_by_name(playlist_name)
-        if not playlist:
-            messagebox.showinfo("Info", "No playlists selected.")
+        if not self.current_playlist:
+            messagebox.showinfo("Info", "No playlist selected.")
             return
 
-        tracks = playlist.get_tracks_in_playlist()
+        tracks = self.current_playlist.get_tracks_in_playlist()
 
         if not tracks:
-            messagebox.showinfo("Info", "No track available.")
+            messagebox.showinfo("Info", "No tracks available in the playlist.")
             return
 
         for track in tracks:
             if track.youtube_link:
                 webbrowser.open(track.youtube_link)
-                time.sleep(15)  # Wait 15 seconds before opening the next track
+                time.sleep(15)  # Wait 15 seconds before playing the next track
+            else:
+                print(f"Track '{track.get_name()}' has no YouTube link.")
 
     def display_no_playlists_message(self):
         # Clear previous content
