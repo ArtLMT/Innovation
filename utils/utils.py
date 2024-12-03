@@ -108,11 +108,13 @@ class Utils:
                 if pd.notna(row["tracks"]) and isinstance(row["tracks"], str):
                     # Filter out invalid tracks
                     tracks = []
+                    sucess = False
                     for track_name in row["tracks"].split("|"):
                         if track_name in library_tracks:
                             tracks.append(library_tracks[track_name])
-                        else:
-                            print(f"Warning: Track '{track_name}' not found in library.")
+                            sucess = True
+                    if sucess == False:
+                        print(f'Track {track_name} not found in library')
                 else:
                     tracks = []
 

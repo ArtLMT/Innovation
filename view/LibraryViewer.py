@@ -14,13 +14,15 @@ class LibraryUI(tk.Frame):
         # Initialize Library
         self.library = Library()
         self.listOfTrack = self.library.get_tracks()
-        if self.listOfTrack is not None:
-            self.current_track = self.listOfTrack[0]
+        self.current_track = self.listOfTrack[0] if self.listOfTrack else None  # Default to first track or None
         self.track_info_frame = None  # Frame to display selected track's info
 
         self.create_ui()
-        
-        self.on_track_click(self.current_track)
+
+        if self.current_track:  # Only call if there's a valid track
+            self.on_track_click(self.current_track)
+        else:
+            self.display_no_results_message()
 
     def create_ui(self):
         width = self.winfo_screenwidth()
@@ -64,7 +66,10 @@ class LibraryUI(tk.Frame):
         # Display all tracks in the library
         self.display_tracks(self.library.get_tracks())
         
-    def on_track_click(self, track):        
+    def on_track_click(self, track):      
+        if track is None:  # Guard clause for None track
+            self.display_no_results_message()
+            return
         self.current_track = track
         
         self.reload_current_track_selected()
@@ -72,6 +77,9 @@ class LibraryUI(tk.Frame):
     def display_tracks(self,tracks):
         # Clear previous content
         Utils.clear_frame(self.track_frame)
+        if self.listOfTrack is None:
+            self.display_no_results_message()
+            return
         
         for index, track in enumerate(tracks):
             # Create a frame for each track
@@ -102,6 +110,9 @@ class LibraryUI(tk.Frame):
             img_label.bind("<Double-Button-1>", lambda e, t=track: self.play_track())
 
     def play_track(self):
+        if not self.current_track:
+            messagebox.showinfo("Info", "No track selected to play.")
+            return
         webbrowser.open(self.current_track.youtube_link)
 
     def search_tracks(self, event):
@@ -119,14 +130,21 @@ class LibraryUI(tk.Frame):
     def display_no_results_message(self):
         # Clear previous content
         Utils.clear_frame(self.track_frame)
-        
-        # Create a "No Results Found" label
-        no_results_label = tk.Label(self.track_frame, text="No results found", font=("Arial", 18), bg="lightgray", fg="red", wraplength=800, justify="center")
-        
-        # Ensure the name_label has a fixed pixel width to fill the width of the frame
-        no_results_label.grid_columnconfigure(1, weight=1)  # Let column 1 (name label) expand
-        no_results_label.configure(width=int(72))  # Approx. 15 pixels per character
-        no_results_label.grid(pady=50)
+
+        # Create a "No Tracks Found" label
+        no_results_label = tk.Label(
+            self.track_frame, 
+            text="No Tracks Found", 
+            font=("Arial", 18), 
+            bg="lightgray", 
+            fg="red", 
+            wraplength=800, 
+            justify="center"
+        )
+        no_results_label.pack(pady=50)
+
+        # Clear the track info frame
+        Utils.clear_frame(self.track_info_frame)
 
     def reload_current_track_selected(self):
         # Update the track_info_frame to display the selected track's details
@@ -150,24 +168,38 @@ class LibraryUI(tk.Frame):
         rating_label.pack(pady=10)
 
     def remove_track_clicked(self):
-        if self.current_track is None:
+        if not self.listOfTrack:
+            messagebox.showinfo("Info", "No tracks available to remove.")
+            return
+
+        if not self.current_track:
+            messagebox.showinfo("Info", "No track selected to remove.")
             return
 
         # Find the track in the list by name
         track_to_remove = next((track for track in self.listOfTrack if track.get_name() == self.current_track.get_name()), None)
-        
-        self.listOfTrack.remove(track_to_remove)
-        Utils.save_tracks_to_csv(self.listOfTrack)
-        self.display_tracks(self.listOfTrack)
-        
-        self.current_track = self.listOfTrack[0]  # Clear the selection
 
-        self.reload_current_track_selected()
+        if track_to_remove:
+            self.listOfTrack.remove(track_to_remove)
+            Utils.save_tracks_to_csv(self.listOfTrack)
+            self.display_tracks(self.listOfTrack)
+
+            # Update selection or clear if no tracks remain
+            self.current_track = self.listOfTrack[0] if self.listOfTrack else None
+            self.reload_current_track_selected()
+        else:
+            messagebox.showinfo("Info", "Selected track not found in the list.")
+
 
     def add_track_clicked(self):
         self.controller.show_frame("TrackCreator")
         
     def reload_library_view(self):
         self.listOfTrack = Utils.load_tracks_from_csv()
-        
-        self.display_tracks(self.listOfTrack)
+
+        if not self.listOfTrack:
+            self.display_no_results_message()
+            self.current_track = None
+        else:
+            self.display_tracks(self.listOfTrack)
+            self.current_track = self.listOfTrack[0]  # Default to the first track
