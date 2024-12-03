@@ -22,10 +22,12 @@ class PlaylistUI(tk.Frame):
         
         self.create_ui()
 
-        if self.current_playlist is None and self.playlists:
+        if not self.playlists:
+            self.display_no_playlists_message()
+        else:
+            self.display_playlist(self.playlists)
             self.current_playlist = self.playlists[0]
-            self.display_tracks_in_playlist(self.current_playlist)
-
+            
     def create_ui(self):
         self.configure(bg="light sky blue")
         self.playlist_area = tk.Canvas(self, bg="gray", borderwidth=1, relief="solid")
@@ -220,38 +222,39 @@ class PlaylistUI(tk.Frame):
             messagebox.showwarning("Warning", "No playlist selected.")
 
     def reload_playlist_and_tracks_display(self):
-        # Set the updated tracks in the playlist
-        self.playlists = Utils.load_playlists_from_csv()  
-        old_playlist = self.current_playlist.get_name()
-        new_playlist = self.playlist_controller.get_playlist_by_name(old_playlist)
-        self.current_playlist = new_playlist
-        # Clear and refresh playlist display
-        self.display_playlist(self.playlists)
-        
-        # Update the currently selected playlist
-        if self.current_playlist and self.current_playlist.get_name() in [playlist.get_name() for playlist in self.playlists]:
-            # Current playlist exists in the updated list
+        # Set the updated playlists
+        self.playlists = Utils.load_playlists_from_csv()
+
+        if not self.playlists:  # No playlists available
+            self.display_no_playlists_message()
+            self.current_playlist = None
+            return
+
+        old_playlist_name = self.current_playlist.get_name() if self.current_playlist else None
+        new_playlist = self.playlist_controller.get_playlist_by_name(old_playlist_name)
+
+        if new_playlist:
+            self.current_playlist = new_playlist
             self.display_tracks_in_playlist(new_playlist)
         else:
-            # Current playlist no longer exists
+            # Default to the first playlist, or clear selection if none exist
             self.current_playlist = self.playlists[0] if self.playlists else None
             if self.current_playlist:
                 self.display_tracks_in_playlist(self.current_playlist)
             else:
-                # No playlists left, clear the track frame
-                Utils.clear_frame(self.track_info_frame)
-                messagebox.showinfo("Info", "No playlists available.")
+                self.display_no_playlists_message()
 
     def reload_playlist_view(self):
         self.playlists = Utils.load_playlists_from_csv()
 
-        # Update displayed playlists
-        self.display_playlist(self.playlists)
-
-        if self.playlists:
-            current_playlist_name = self.playlists[0].get_name()
-            current_playlist = self.playlist_controller.get_playlist_by_name(current_playlist_name)
-            self.display_tracks_in_playlist(current_playlist)
+        if not self.playlists:  # If no playlists exist
+            self.display_no_playlists_message()
+            self.current_playlist = None
+        else:
+            self.display_playlist(self.playlists)
+            # Automatically select the first playlist
+            self.current_playlist = self.playlists[0]
+            self.display_tracks_in_playlist(self.current_playlist)
         
     def clear_track_frame(self,track_frame):
         Utils.clear_frame(track_frame)
@@ -278,3 +281,20 @@ class PlaylistUI(tk.Frame):
             if track.youtube_link:
                 webbrowser.open(track.youtube_link)
                 time.sleep(15)  # Wait 15 seconds before opening the next track
+
+    def display_no_playlists_message(self):
+        # Clear previous content
+        Utils.clear_frame(self.track_frame)
+
+        # Add "No Playlists Found" message
+        no_playlists_label = tk.Label(
+            self.track_frame, 
+            text="No Playlists Found", 
+            font=("Arial", 18), 
+            bg="lightgray", 
+            fg="red", 
+            wraplength=1020, 
+            justify="center"
+        )
+        no_playlists_label.pack(pady=50)
+        no_playlists_label.configure(width=int(71))
