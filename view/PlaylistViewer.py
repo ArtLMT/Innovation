@@ -1,4 +1,6 @@
 import tkinter as tk
+import time
+import webbrowser
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from model.library import Library
@@ -48,7 +50,7 @@ class PlaylistUI(tk.Frame):
         self.track_info_frame.place(x=1090, y=80, width=400, height=450)
 
         # Play button below the track_info_frame
-        play_button = tk.Button(self, text="Play", font=("Arial", 18), bg="white", fg="black")
+        play_button = tk.Button(self, text="Play", font=("Arial", 18), bg="white", fg="black", command= self.play_all_tracks)
         play_button.place(x=1090, y=550, width=400, height=50)
         
         remove_track_button = tk.Button(self, text="Remove", font=("Arial", 18), bg="red", fg="black", command= self.on_remove_track_click)
@@ -86,13 +88,7 @@ class PlaylistUI(tk.Frame):
         frame.grid_columnconfigure(1, weight=0)
         
         playlist_name = playlist.get_name().strip()
-        playlist_name_lbl = tk.Label(
-            frame, 
-            text=playlist_name,  # Display 'Playlist: {name}'
-            font=("Arial", 18, "bold"),  # Make the font bold and slightly larger
-            bg="white",
-            anchor="center"  # Center the text
-        )
+        playlist_name_lbl = tk.Label(frame, text=playlist_name,font=("Arial", 18, "bold"),bg="white",anchor="center")
         
         playlist_name_lbl.pack(side="left", padx=(10,0))
         
@@ -263,3 +259,22 @@ class PlaylistUI(tk.Frame):
     def select_track(self, track):
         self.current_track = track
         self.on_item_click(track)
+        
+    def play_all_tracks(self):
+        #self.playlists = Utils.load_playlists_from_csv()
+        playlist_name = self.current_playlist.get_name()
+        playlist = self.playlist_controller.get_playlist_by_name(playlist_name)
+        if not playlist:
+            messagebox.showinfo("Info", "No playlists selected.")
+            return
+
+        tracks = playlist.get_tracks_in_playlist()
+
+        if not tracks:
+            messagebox.showinfo("Info", "No track available.")
+            return
+
+        for track in tracks:
+            if track.youtube_link:
+                webbrowser.open(track.youtube_link)
+                time.sleep(2)  # Wait 5 seconds before opening the next track
